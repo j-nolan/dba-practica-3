@@ -27,24 +27,20 @@ public class MultiBots {
 		Map map2 = new Map("Bot 2", new Point(100, 0), new Dimension(100, 100));
 		Map map3 = new Map("Bot 3", new Point(200, 0), new Dimension(100, 100));
 		Map map4 = new Map("Bot 4", new Point(300, 0), new Dimension(100, 100));
-		Map map5 = new Map("Bot 5", new Point(400, 0), new Dimension(100, 100));
-		Map map6 = new Map("Bot 6", new Point(500, 0), new Dimension(100, 100));
+		Map map5 = new Map("Master", new Point(400, 0), new Dimension(100, 100));
 
         
 		// Create and start discovery agents
-		SingleAgent bot1 = new DiscoveryBot(new AgentID("bot1"), false, map1),
-				bot2 = new DiscoveryBot(new AgentID("bot2"), false, map2),
-				bot3 = new DiscoveryBot(new AgentID("bot3"), false, map3),
-				bot4 = new DiscoveryBot(new AgentID("bot4"), false, map4),
-				bot5 = new DiscoveryBot(new AgentID("bot5"), false, map5),
-				bot6 = new DiscoveryBot(new AgentID("bot6"), true, map6); // this one will do the login
-		
+		SingleAgent bot1 = new DiscoveryBot(new AgentID("bot1"), false, map1, "bot1");
+		SingleAgent	bot2 = new DiscoveryBot(new AgentID("bot2"), false, map2, "bot2");
+		SingleAgent	bot3 = new DiscoveryBot(new AgentID("bot3"), false, map3, "bot3");
+		SingleAgent	bot4 = new DiscoveryBot(new AgentID("bot4"), true, map4, "bot4");
+		SingleAgent master = new MasterOfDrones(new AgentID("MasterOfDrones"), map5);
 		// Start all bots
 		bot1.start();
 		bot2.start();
 		bot3.start();
 		bot4.start();
-		bot5.start();
-		bot6.start();
+		master.start();
 	}
 }

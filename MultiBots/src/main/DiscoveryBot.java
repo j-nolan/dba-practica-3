@@ -9,6 +9,7 @@ import es.upv.dsic.gti_ia.core.SingleAgent;
 
 public class DiscoveryBot extends SingleAgent {
 	
+	private String botName;
 	// A flag that indicates whether the bot should initialize the subscription to the server.
 	// Only one discovery bot should take care of that task.
 	private boolean initializer;
@@ -29,6 +30,12 @@ public class DiscoveryBot extends SingleAgent {
 	// A flag indicating whether the goal has been found
 	private boolean goalFound;
 	
+	// A flag indicating if the drone has the permit to move from MasterOfDrones
+	private boolean move;
+	
+	// The action the drone wants to do on each cycle
+	private String wantedMove;
+	
 	// The internal representation of the map
 	Map map;
 	
@@ -39,10 +46,11 @@ public class DiscoveryBot extends SingleAgent {
 	 * @param initializer a boolean that indicate if that bot should do the initial login procedure
 	 * @throws Exception
 	 */
-	public DiscoveryBot(AgentID aid, boolean initializer, Map map) throws Exception {
+	public DiscoveryBot(AgentID aid, boolean initializer, Map map, String botName) throws Exception {
 		super(aid);
 		this.initializer = initializer;
 		this.map = map;
+		this.botName = botName;
 	}
 	
 	/**
@@ -63,34 +71,34 @@ public class DiscoveryBot extends SingleAgent {
 		// Once we have the key, the next step is to check in to the world. This will assign
 		// a role to the agent
 		this.role = checkIn();
-		
-		// Before moving, ask for a general perception update to see exactly where the robot is
-		updatePerception();
-		
+
 		// Get into the loop
 		Direction nextDirection;
 		while (true) {
+			// Before moving, ask for a general perception update to see exactly where the robot is
+			updatePerception();
+			
 			// Before moving we need to check if the battery should be refueled
 			if (shouldRefuel()) {
-				refuel();
-			}
-			
-			// Start by thinking of the next move
-			nextDirection = think();
-			
-			// If a next move has been successfully computed, go in that direction
-			if (nextDirection != null) {
-				if (!move(nextDirection)) {
-					System.out.println("Could not move to next direction. Stop.");
-					break;
-				}
+				wantedMove = "refuel";
+				if(askRefuel()) refuel();
 			} else {
-				System.out.println("Could not find next direction. Stop.");
-				break;
+				wantedMove="move";
+				// Start by thinking of the next move
+				nextDirection = think();
+				if (askMove(nextDirection)) {
+					// If a next move has been successfully computed, go in that direction
+					if (nextDirection != null) {
+						if (!move(nextDirection)) {
+							System.out.println("Could not move to next direction. Stop.");
+							break;
+						}
+					} else {
+						System.out.println("Could not find next direction. Stop.");
+						break;
+					}
+				}
 			}
-			
-			// Update all the sensors (battery level, position, radar, global energy level,...)
-			updatePerception();
 		}
 		
 		// Logout (close sessions and asks server to save traces)
@@ -98,6 +106,85 @@ public class DiscoveryBot extends SingleAgent {
 		if (initializer) {
 			//logout();
 		}
+	}
+	
+	/**
+	 * This method ask permission to MasterOfDrones if he can refuel
+	 * @author Zacarías Romero
+	 */
+	
+	private boolean askRefuel() {
+		JSONObject json = new JSONObject();
+		// Send request to master
+		try {
+			json.put("command", "refuel");
+			ACLMessage msg = new ACLMessage();
+			msg.setSender(getAid());
+			msg.setReceiver(new AgentID("MasterOfDrones"));
+			msg.setPerformative(ACLMessage.INFORM);
+			msg.setContent(json.toString());
+			send(msg);
+			
+			// Wait for server answer
+			try {
+				msg = receiveACLMessage();
+				//System.out.println(msg);
+				if (msg.getPerformativeInt() == ACLMessage.INFORM) {
+					System.out.println(botName + ": Refueled");
+				} else if(msg.getPerformativeInt() == ACLMessage.REFUSE) {
+						System.out.println(botName + ": Denied Refuel");
+						return false;
+				} else {
+					System.err.println(botName + ": Unexpected answer : " + msg.getPerformativeInt());
+					return false;
+				}
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+				return false;
+			}
+		} catch (JSONException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			return false;
+		}
+		return true;
+	}
+	
+	private boolean askMove(Direction nextDirection) {
+		JSONObject json = new JSONObject();
+		// Send request to master
+		try {
+			json.put("command", nextDirection.toString());
+			ACLMessage msg = new ACLMessage();
+			msg.setSender(getAid());
+			msg.setReceiver(new AgentID("MasterOfDrones"));
+			msg.setPerformative(ACLMessage.INFORM);
+			msg.setContent(json.toString());
+			send(msg);
+			
+			// Wait for server answer
+			try {
+				msg = receiveACLMessage();
+				//System.out.println(msg);
+				if (msg.getPerformativeInt() == ACLMessage.INFORM) {
+					System.out.println(botName + ": Moving");
+				} else if(msg.getPerformativeInt() == ACLMessage.REFUSE) {
+						System.out.println(botName + ": Denied move");
+						return false;
+				} else {
+					System.err.println(botName + ": Unexpected answer : " + msg.getPerformativeInt());
+					return false;
+				}
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+				return false;
+			}
+		} catch (JSONException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			return false;
+		}
+		return true;
 	}
 
 	/**
@@ -151,8 +238,7 @@ public class DiscoveryBot extends SingleAgent {
 					msg.addReceiver(new AgentID("bot1"));
 					msg.addReceiver(new AgentID("bot2"));
 					msg.addReceiver(new AgentID("bot3"));
-					msg.addReceiver(new AgentID("bot4"));
-					msg.addReceiver(new AgentID("bot5"));
+					//msg.addReceiver(new AgentID("bot4"));
 					send(msg);
 				}
 			} else {
@@ -248,7 +334,7 @@ public class DiscoveryBot extends SingleAgent {
 				goalFound = result.getBoolean("goal");
 				map.update(x, y, result.getJSONArray("sensor"));
 				
-				System.out.println("Battery : " + battery + ", x : " + x + ", y : " + y + " world energy : " + totalWorldEnergy + ", found goal" + (goalFound ? "yes" : "no"));
+				System.out.println(botName + " --> Battery : " + battery + ", x : " + x + ", y : " + y + " world energy : " + totalWorldEnergy + ", found goal: " + (goalFound ? "yes" : "no"));
 				
 			} else {
 				System.err.println("Server didn't inform us on sensors state, says " + msg.toString());
@@ -319,9 +405,9 @@ public class DiscoveryBot extends SingleAgent {
 				msg = receiveACLMessage();
 				System.out.println(msg);
 				if (msg.getPerformativeInt() == ACLMessage.INFORM) {
-					System.out.println("Ok moved (" + x + ", " + y + " => " + direction);
+					System.out.println(botName + ": Ok moved (" + x + ", " + y + " => " + direction);
 				} else {
-					System.err.println("Unexpected answer : " + msg.getPerformativeInt());
+					System.err.println(botName + ": Unexpected answer : " + msg.getPerformativeInt());
 					return false;
 				}
 			} catch (InterruptedException e) {
@@ -364,9 +450,9 @@ public class DiscoveryBot extends SingleAgent {
 			// Wait for server answer
 			try {
 				msg = receiveACLMessage();
-				System.out.println(msg);
+				//System.out.println(msg);
 				if (msg.getPerformativeInt() == ACLMessage.INFORM) {
-					System.out.println(msg);
+					//System.out.println(msg);
 				} else {
 					System.err.println("Unexpected answer : " + msg.getPerformativeInt());
 				}

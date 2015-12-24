@@ -11,7 +11,7 @@ public enum Role {
 	// The three available roles and their properties
 	FLY(3, 2, true),
 	PARROT(5, 1,false),
-	FALCON(11, 4, true);
+	FALCON(11, 4, false);
 	
 	// Constructor
 	private Role(int radarSize, int batteryConsumption, boolean fantasma) {

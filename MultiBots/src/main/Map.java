@@ -103,7 +103,7 @@ public class Map extends JFrame {
 			int y_coord = (i / radarSize) - radarSize/2;
 			try {
 				// Ignore borders that are off the map, we just don't draw them
-				if (y_pos + y_coord >= 0 && x_pos + x_coord >= 0) {
+				if (y_pos + y_coord >= 0 && x_pos + x_coord >= 0 && y_pos + y_coord < 100 && x_pos + x_coord < 100) { // WARNING: I INCLUDED THE <100 PART SO IT DIDNT CRASH
 					matrix[y_pos + y_coord][x_pos + x_coord] = states[sensor.getInt(i)];
 				}
 			} catch (JSONException e) {
