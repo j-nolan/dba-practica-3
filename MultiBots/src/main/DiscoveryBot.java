@@ -149,7 +149,7 @@ public class DiscoveryBot extends SingleAgent {
 						System.out.println(botName + ": Denied Refuel");
 						return false;
 				} else {
-					System.err.println(botName + ": Unexpected answer : " + msg.getPerformativeInt());
+					System.err.println(botName + ": Unexpected answer askRefuel : " + msg.getPerformativeInt());
 					return false;
 				}
 			} catch (InterruptedException e) {
@@ -189,7 +189,7 @@ public class DiscoveryBot extends SingleAgent {
 						System.out.println(botName + ": Denied move");
 						return false;
 				} else {
-					System.err.println(botName + ": Unexpected answer : " + msg.getPerformativeInt());
+					System.err.println(botName + ": Unexpected answer on askMove : " + msg.getPerformativeInt());
 					return false;
 				}
 			} catch (InterruptedException e) {
@@ -259,7 +259,7 @@ public class DiscoveryBot extends SingleAgent {
 					send(msg);
 				}
 			} else {
-				System.err.println("Unexpected answer " + msg.getPerformativeInt());
+				System.err.println("Unexpected answer on getKey " + msg.getPerformativeInt());
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -399,7 +399,7 @@ public class DiscoveryBot extends SingleAgent {
 			} else if(msg.getPerformativeInt() == ACLMessage.REFUSE) {
 					System.out.println(botName + ": Denied move");
 			} else {
-				System.err.println(botName + ": Unexpected answer : " + msg.getPerformativeInt());
+				System.err.println(botName + ": Unexpected answer on sendPerception : " + msg.getPerformativeInt());
 			}
 		} catch (JSONException | InterruptedException e) {
 			// TODO Auto-generated catch block
@@ -468,7 +468,7 @@ public class DiscoveryBot extends SingleAgent {
 				if (msg.getPerformativeInt() == ACLMessage.INFORM) {
 					System.out.println(botName + ": Ok moved (" + x + ", " + y + ") => " + direction);
 				} else {
-					System.err.println(botName + ": Unexpected answer : " + msg.getPerformativeInt());
+					System.err.println(botName + ": Unexpected answer on move : " + msg.getPerformativeInt());
 					return false;
 				}
 			} catch (InterruptedException e) {
@@ -515,7 +515,7 @@ public class DiscoveryBot extends SingleAgent {
 				if (msg.getPerformativeInt() == ACLMessage.INFORM) {
 					//System.out.println(msg);
 				} else {
-					System.err.println("Unexpected answer : " + msg.getPerformativeInt());
+					System.err.println("Unexpected answer on refuel : " + msg.getPerformativeInt());
 				}
 			} catch (InterruptedException e) {
 				e.printStackTrace();

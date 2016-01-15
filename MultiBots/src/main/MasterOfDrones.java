@@ -66,29 +66,31 @@ public class MasterOfDrones extends SingleAgent {
 		// Send request to master
 		// Wait for server answer
 		try {
-			msg = receiveACLMessage();
-			botName = msg.getSender().getLocalName();
-			//System.out.println(msg);
-			json = new JSONObject(msg.getContent());
-			
-			if (msg.getPerformativeInt() == ACLMessage.INFORM_REF) {
-				int index = Character.getNumericValue(botName.charAt(3));
-				System.out.println(index);
-				battery.set(index,json.getInt("battery"));
-				x.set(index,json.getInt("x"));
-				y.set(index,json.getInt("y"));
-				state.set(index,json.getInt("state"));
-				totalWorldEnergy = json.getInt("total");
-				JSONArray jArray = json.getJSONArray("sensor");
-				map.update(x.get(index), y.get(index), jArray);
+			for (int i=0;i<4;i++) {
+				msg = receiveACLMessage();
+				botName = msg.getSender().getLocalName();
+				//System.out.println(msg);
+				json = new JSONObject(msg.getContent());
 				
-				msg = new ACLMessage();
-				msg.setSender(getAid());
-				msg.setReceiver(new AgentID(botName));
-				msg.setPerformative(ACLMessage.INFORM);
-				send(msg);
-			} else {
-				System.err.println(botName + ": Unexpected answer : " + msg.getPerformativeInt());
+				if (msg.getPerformativeInt() == ACLMessage.INFORM_REF) {
+					int index = Character.getNumericValue(botName.charAt(3));
+					System.out.println(index);
+					battery.set(index,json.getInt("battery"));
+					x.set(index,json.getInt("x"));
+					y.set(index,json.getInt("y"));
+					state.set(index,json.getInt("state"));
+					totalWorldEnergy = json.getInt("total");
+					JSONArray jArray = json.getJSONArray("sensor");
+					map.update(x.get(index), y.get(index), jArray);
+					
+					msg = new ACLMessage();
+					msg.setSender(getAid());
+					msg.setReceiver(new AgentID(botName));
+					msg.setPerformative(ACLMessage.INFORM);
+					send(msg);
+				} else {
+					System.err.println(botName + ": Unexpected answer on getPerception : " + msg.getPerformativeInt());
+				}
 			}
 		} catch (InterruptedException e) {
 			e.printStackTrace();
@@ -110,7 +112,7 @@ public class MasterOfDrones extends SingleAgent {
 		// Send request to master
 		// Wait for server answer
 		try {
-			for(int i=0;i<5;i++) {
+			for(int i=0;i<4;i++) {
 				msg = receiveACLMessage();
 				botName = msg.getSender().getLocalName();
 				//System.out.println(msg);
@@ -118,7 +120,7 @@ public class MasterOfDrones extends SingleAgent {
 				if (msg.getPerformativeInt() == ACLMessage.INFORM) {
 					System.out.println(botName + " solicita: "+json.getString("command"));
 				} else {
-					System.err.println(botName + ": Unexpected answer : " + msg.getPerformativeInt());
+					System.err.println(botName + ": Unexpected answer on evaluate : " + msg.getPerformativeInt());
 				}
 			}
 		} catch (InterruptedException e) {
@@ -129,11 +131,10 @@ public class MasterOfDrones extends SingleAgent {
 		}
 			msg = new ACLMessage();
 			msg.setSender(getAid());
-			/*msg.addReceiver(new AgentID("bot1"));
+			msg.addReceiver(new AgentID("bot1"));
 			msg.addReceiver(new AgentID("bot2"));
 			msg.addReceiver(new AgentID("bot3"));
-			msg.addReceiver(new AgentID("bot4"));*/
-			msg.setReceiver(new AgentID("bot1"));
+			msg.addReceiver(new AgentID("bot4"));
 			msg.setPerformative(ACLMessage.INFORM);
 			send(msg);
 
@@ -147,9 +148,9 @@ public class MasterOfDrones extends SingleAgent {
 		// Loop getting info about all drones and the move they want, evaluating it and send each one if they can
 		// procceed or not
 		while (true) {
-			getPerception();
-			getPerception();
-			getPerception();
+			//getPerception();
+			//getPerception();
+			//getPerception();
 			getPerception();
 			evaluate();
 		}
