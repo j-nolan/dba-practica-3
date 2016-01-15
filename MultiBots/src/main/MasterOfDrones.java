@@ -2,6 +2,7 @@ package main;
 
 import java.util.ArrayList;
 
+import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 
@@ -17,11 +18,13 @@ public class MasterOfDrones extends SingleAgent {
 	private ArrayList<Integer> y;
 	
 	// The state of each drone, can be: ready, objectiveSeen, objectiveFound.
-	private ArrayList<String> state;
+	private ArrayList<Integer> state;
 	
 	// The world has a given amount of energy that decrease everytime an agent refuels
 	// The total remaining amount is saved in this attribute
 	private int totalWorldEnergy;
+	
+	private ArrayList<String> wantedMoves;
 	
 	// The internal representation of the map
 	Map map;
@@ -34,29 +37,56 @@ public class MasterOfDrones extends SingleAgent {
 	 */
 	public MasterOfDrones(AgentID aid, Map map) throws Exception {
 		super(aid);
+		System.out.println("MASTER!!");
 		this.map = map;
-		this.battery = new ArrayList<Integer>(4);
-		this.x = new ArrayList<Integer>(4);
-		this.y = new ArrayList<Integer>(4);
-		this.state = new ArrayList<String>(4);
+		this.battery = new ArrayList<Integer>(5);
+		this.x = new ArrayList<Integer>(5);
+		this.y = new ArrayList<Integer>(5);
+		this.state = new ArrayList<Integer>(5);
+		this.wantedMoves = new ArrayList<String>(5);
+		
+		for (int i=0;i<5;i++) {
+			battery.add(0);
+			x.add(0);
+			y.add(0);
+			state.add(0);
+			wantedMoves.add("ayy");
+		}
 	}
 	
 	/**
-	 * Method that evaluates the wanted moves of the drones and answers them
+	 * Method that gets the perception of the bots
 	 * @author Zacarías Romero Sellamitou
 	 */
 	
-	private void evaluate(String botName) {
+	private void getPerception() {
 		JSONObject json = new JSONObject();
 		ACLMessage msg;
+		String botName = null;
 		// Send request to master
 		// Wait for server answer
 		try {
 			msg = receiveACLMessage();
+			botName = msg.getSender().getLocalName();
 			//System.out.println(msg);
 			json = new JSONObject(msg.getContent());
-			if (msg.getPerformativeInt() == ACLMessage.INFORM) {
-				System.out.println(msg.getSender().getLocalName() + " solicita: "+json.getString("command"));
+			
+			if (msg.getPerformativeInt() == ACLMessage.INFORM_REF) {
+				int index = Character.getNumericValue(botName.charAt(3));
+				System.out.println(index);
+				battery.set(index,json.getInt("battery"));
+				x.set(index,json.getInt("x"));
+				y.set(index,json.getInt("y"));
+				state.set(index,json.getInt("state"));
+				totalWorldEnergy = json.getInt("total");
+				JSONArray jArray = json.getJSONArray("sensor");
+				map.update(x.get(index), y.get(index), jArray);
+				
+				msg = new ACLMessage();
+				msg.setSender(getAid());
+				msg.setReceiver(new AgentID(botName));
+				msg.setPerformative(ACLMessage.INFORM);
+				send(msg);
 			} else {
 				System.err.println(botName + ": Unexpected answer : " + msg.getPerformativeInt());
 			}
@@ -66,18 +96,47 @@ public class MasterOfDrones extends SingleAgent {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+	}
+	
+	/**
+	 * Method that evaluates the wanted moves of the drones and answers them
+	 * @author Zacarías Romero Sellamitou
+	 */
+	
+	private void evaluate() {
+		JSONObject json = new JSONObject();
+		ACLMessage msg;
+		String botName = null;
+		// Send request to master
+		// Wait for server answer
 		try {
-			json.put("command", "OK");
-			msg = new ACLMessage();
-			msg.setSender(getAid());
-			msg.setReceiver(new AgentID(botName));
-			if (botName == "bot3") msg.setPerformative(ACLMessage.REFUSE);else msg.setPerformative(ACLMessage.INFORM);
-			msg.setContent(json.toString());
-			send(msg);
+			for(int i=0;i<5;i++) {
+				msg = receiveACLMessage();
+				botName = msg.getSender().getLocalName();
+				//System.out.println(msg);
+				json = new JSONObject(msg.getContent());
+				if (msg.getPerformativeInt() == ACLMessage.INFORM) {
+					System.out.println(botName + " solicita: "+json.getString("command"));
+				} else {
+					System.err.println(botName + ": Unexpected answer : " + msg.getPerformativeInt());
+				}
+			}
+		} catch (InterruptedException e) {
+			e.printStackTrace();
 		} catch (JSONException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+			msg = new ACLMessage();
+			msg.setSender(getAid());
+			/*msg.addReceiver(new AgentID("bot1"));
+			msg.addReceiver(new AgentID("bot2"));
+			msg.addReceiver(new AgentID("bot3"));
+			msg.addReceiver(new AgentID("bot4"));*/
+			msg.setReceiver(new AgentID("bot1"));
+			msg.setPerformative(ACLMessage.INFORM);
+			send(msg);
+
 	}
 	/**
 	 * Bot main execution loop. Before entering the loop, it will take care of doing the login
@@ -88,10 +147,11 @@ public class MasterOfDrones extends SingleAgent {
 		// Loop getting info about all drones and the move they want, evaluating it and send each one if they can
 		// procceed or not
 		while (true) {
-			evaluate("bot1");
-			evaluate("bot2");
-			evaluate("bot3");
-			evaluate("bot4");
+			getPerception();
+			getPerception();
+			getPerception();
+			getPerception();
+			evaluate();
 		}
 	}
 }

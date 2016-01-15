@@ -125,6 +125,7 @@ public class Map extends JFrame {
 	public boolean validMove(int robotX, int robotY, Direction direction) {
 		int intention_x = robotX + direction.getXCoord();
 		int intention_y = robotY + direction.getYCoord();
+		if (intention_x >=100 || intention_y >=100) return false;
 		if (intention_x >= 0 && intention_y >= 0) {
 			System.out.println("State at " + intention_x + ", " + intention_y + " is " + matrix[intention_y][intention_x]);
 		}

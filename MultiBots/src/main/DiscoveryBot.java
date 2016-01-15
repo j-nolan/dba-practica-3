@@ -1,5 +1,8 @@
 package main;
 
+import java.util.ArrayList;
+
+import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 
@@ -39,6 +42,12 @@ public class DiscoveryBot extends SingleAgent {
 	// The internal representation of the map
 	Map map;
 	
+	// Array with the information of the sensor
+	private ArrayList<Integer> sensor;
+	
+	
+	// State as: 0 = ready, 1 = objectiveSeen, 2 = objectiveFound
+	private int state;
 	/**
 	 * Constructor
 	 * @author James Nolan
@@ -51,6 +60,7 @@ public class DiscoveryBot extends SingleAgent {
 		this.initializer = initializer;
 		this.map = map;
 		this.botName = botName;
+		this.state = 0;
 	}
 	
 	/**
@@ -71,12 +81,16 @@ public class DiscoveryBot extends SingleAgent {
 		// Once we have the key, the next step is to check in to the world. This will assign
 		// a role to the agent
 		this.role = checkIn();
+		if(role==Role.FLY) sensor = new ArrayList<Integer>(9);
+		if(role==Role.PARROT) sensor = new ArrayList<Integer>(25);
+		if(role==Role.FALCON) sensor = new ArrayList<Integer>(121);
 
 		// Get into the loop
 		Direction nextDirection;
 		while (true) {
 			// Before moving, ask for a general perception update to see exactly where the robot is
 			updatePerception();
+			sendPerception();
 			
 			// Before moving we need to check if the battery should be refueled
 			if (shouldRefuel()) {
@@ -154,6 +168,7 @@ public class DiscoveryBot extends SingleAgent {
 		JSONObject json = new JSONObject();
 		// Send request to master
 		try {
+			System.out.println("Pidiendo permiso para moverme");
 			json.put("command", nextDirection.toString());
 			ACLMessage msg = new ACLMessage();
 			msg.setSender(getAid());
@@ -164,7 +179,9 @@ public class DiscoveryBot extends SingleAgent {
 			
 			// Wait for server answer
 			try {
+				System.out.println("Esperando...");
 				msg = receiveACLMessage();
+				System.out.println("Mensaje recibido");
 				//System.out.println(msg);
 				if (msg.getPerformativeInt() == ACLMessage.INFORM) {
 					System.out.println(botName + ": Moving");
@@ -279,8 +296,9 @@ public class DiscoveryBot extends SingleAgent {
 				msg = receiveACLMessage();
 				if (msg.getPerformativeInt() == ACLMessage.INFORM) {
 					// Get assigned role from server
-					System.out.println("I am " + getAid() + " and I decode " + msg.toString());
+					//System.out.println("I am " + getName() + " and I decode " + msg.toString());
 					role = Role.values()[new JSONObject(msg.getContent()).getInt("rol")];
+					System.out.println("I am " + getName() + " and my role is " + role);
 				} else {
 					System.err.println("Server did not assign a role for checkin. Says " + msg.toString());
 				}
@@ -332,16 +350,59 @@ public class DiscoveryBot extends SingleAgent {
 				y = result.getInt("y");
 				totalWorldEnergy = result.getInt("energy");
 				goalFound = result.getBoolean("goal");
-				map.update(x, y, result.getJSONArray("sensor"));
+				JSONArray jArray = result.getJSONArray("sensor");
+				for(int i=0;i<jArray.length();i++) {
+					sensor.add(jArray.getInt(i));
+				}
+				//map.update(x, y, result.getJSONArray("sensor"));
+				map.update(x, y, jArray);
 				
 				System.out.println(botName + " --> Battery : " + battery + ", x : " + x + ", y : " + y + " world energy : " + totalWorldEnergy + ", found goal: " + (goalFound ? "yes" : "no"));
 				
 			} else {
 				System.err.println("Server didn't inform us on sensors state, says " + msg.toString());
 			}
-			
-			
 		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+	
+	/**
+	 * Send current perception to MasterOfDrones so he can make useful choices
+	 * @author Zacarías Romero Sellamitou
+	 * @throws InterruptedException 
+	 */
+	
+	private void sendPerception(){
+		JSONObject json = new JSONObject();
+		try {
+			json.put("battery", battery);
+			json.put("x", x);
+			json.put("y", y);
+			json.put("state", state);
+			json.put("total", totalWorldEnergy);
+			json.put("sensor", sensor);
+			
+			ACLMessage msg = new ACLMessage();
+			msg.setPerformative(ACLMessage.INFORM_REF);
+			msg.setSender(getAid());
+			msg.setReceiver(new AgentID("MasterOfDrones"));
+			msg.setContent(json.toString());
+			
+			send(msg);
+			
+			msg = receiveACLMessage();
+			System.out.println("Percepcion ha sido recibida");
+			//System.out.println(msg);
+			if (msg.getPerformativeInt() == ACLMessage.INFORM) {
+				System.out.println(botName + ": Moving");
+			} else if(msg.getPerformativeInt() == ACLMessage.REFUSE) {
+					System.out.println(botName + ": Denied move");
+			} else {
+				System.err.println(botName + ": Unexpected answer : " + msg.getPerformativeInt());
+			}
+		} catch (JSONException | InterruptedException e) {
+			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
@@ -403,9 +464,9 @@ public class DiscoveryBot extends SingleAgent {
 			// Wait for server answer
 			try {
 				msg = receiveACLMessage();
-				System.out.println(msg);
+				//System.out.println(msg);
 				if (msg.getPerformativeInt() == ACLMessage.INFORM) {
-					System.out.println(botName + ": Ok moved (" + x + ", " + y + " => " + direction);
+					System.out.println(botName + ": Ok moved (" + x + ", " + y + ") => " + direction);
 				} else {
 					System.err.println(botName + ": Unexpected answer : " + msg.getPerformativeInt());
 					return false;
