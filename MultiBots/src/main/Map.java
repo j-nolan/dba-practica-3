@@ -127,8 +127,13 @@ public class Map extends JFrame {
 		int intention_y = robotY + direction.getYCoord();
 		if (intention_x >=100 || intention_y >=100) return false;
 		if (intention_x >= 0 && intention_y >= 0) {
-			System.out.println("State at " + intention_x + ", " + intention_y + " is " + matrix[intention_y][intention_x]);
+			//System.out.println("State at " + intention_x + ", " + intention_y + " is " + matrix[intention_y][intention_x]);
 		}
 		return (intention_x >= 0 && intention_y >= 0 && (matrix[intention_y][intention_x] == MapPixel.FREE || matrix[intention_y][intention_x] == MapPixel.GOAL));
+	}
+	
+	public MapPixel get(int x, int y) {
+		if (x>= SIZE_X || y>=SIZE_Y || x<0 || y<0) return MapPixel.BORDER;
+		else return matrix[y][x];
 	}
 }

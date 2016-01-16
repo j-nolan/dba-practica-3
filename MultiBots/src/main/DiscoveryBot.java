@@ -90,36 +90,18 @@ public class DiscoveryBot extends SingleAgent {
 		while (true) {
 			// Before moving, ask for a general perception update to see exactly where the robot is
 			updatePerception();
-			sendPerception();
-			
-			// Before moving we need to check if the battery should be refueled
-			if (shouldRefuel()) {
-				wantedMove = "refuel";
-				if(askRefuel()) refuel();
-			} else {
-				wantedMove="move";
-				// Start by thinking of the next move
-				nextDirection = think();
-				if (askMove(nextDirection)) {
-					// If a next move has been successfully computed, go in that direction
-					if (nextDirection != null) {
-						if (!move(nextDirection)) {
-							System.out.println("Could not move to next direction. Stop.");
-							break;
-						}
-					} else {
-						System.out.println("Could not find next direction. Stop.");
-						break;
-					}
-				}
+			wantedMove=sendPerception();
+			if (!wantedMove.equals("idle")) {
+				if (wantedMove.equals("refuel")) refuel();
+				else move(wantedMove);
 			}
 		}
 		
 		// Logout (close sessions and asks server to save traces)
 		
-		if (initializer) {
+		/*if (initializer) {
 			//logout();
-		}
+		}*/
 	}
 	
 	/**
@@ -150,41 +132,6 @@ public class DiscoveryBot extends SingleAgent {
 						return false;
 				} else {
 					System.err.println(botName + ": Unexpected answer askRefuel : " + msg.getPerformativeInt());
-					return false;
-				}
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-				return false;
-			}
-		} catch (JSONException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-			return false;
-		}
-		return true;
-	}
-	
-	private boolean askMove(Direction nextDirection) {
-		JSONObject json = new JSONObject();
-		// Send request to master
-		try {
-			json.put("command", nextDirection.toString());
-			ACLMessage msg = new ACLMessage();
-			msg.setSender(getAid());
-			msg.setReceiver(new AgentID("MasterOfDrones"));
-			msg.setPerformative(ACLMessage.INFORM);
-			msg.setContent(json.toString());
-			send(msg);
-			
-			// Wait for server answer
-			try {
-				msg = receiveACLMessage();
-				//System.out.println(msg);
-				if (msg.getPerformativeInt() == ACLMessage.INFORM) {
-				} else if(msg.getPerformativeInt() == ACLMessage.REFUSE) {
-						return false;
-				} else {
-					System.err.println(botName + ": Unexpected answer on askMove : " + msg.getPerformativeInt());
 					return false;
 				}
 			} catch (InterruptedException e) {
@@ -373,8 +320,9 @@ public class DiscoveryBot extends SingleAgent {
 	 * @throws InterruptedException 
 	 */
 	
-	private void sendPerception(){
+	private String sendPerception(){
 		JSONObject json = new JSONObject();
+		String st = null;
 		try {
 			json.put("battery", battery);
 			json.put("x", x);
@@ -395,6 +343,8 @@ public class DiscoveryBot extends SingleAgent {
 			msg = receiveACLMessage();
 			//System.out.println(msg);
 			if (msg.getPerformativeInt() == ACLMessage.INFORM) {
+				JSONObject js = new JSONObject(msg.getContent());
+				st = js.getString(botName);
 			} else if(msg.getPerformativeInt() == ACLMessage.REFUSE) {
 			} else {
 				System.err.println(botName + ": Unexpected answer on sendPerception : " + msg.getPerformativeInt());
@@ -403,6 +353,7 @@ public class DiscoveryBot extends SingleAgent {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+		return st;
 	}
 	
 	/**
@@ -447,10 +398,10 @@ public class DiscoveryBot extends SingleAgent {
 	 * @param direction the direction the robot should go
 	 * @return true if server responded as expected, false if an error occurred
 	 */
-	private boolean move(Direction direction) {
+	private boolean move(String direction) {
 		JSONObject json = new JSONObject();
 		try {
-			json.put("command", direction.toString());
+			json.put("command", direction);
 			json.put("key", key);
 			ACLMessage msg = new ACLMessage();
 			msg.setSender(getAid());
