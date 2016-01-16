@@ -168,7 +168,6 @@ public class DiscoveryBot extends SingleAgent {
 		JSONObject json = new JSONObject();
 		// Send request to master
 		try {
-			System.out.println("Pidiendo permiso para moverme");
 			json.put("command", nextDirection.toString());
 			ACLMessage msg = new ACLMessage();
 			msg.setSender(getAid());
@@ -179,14 +178,10 @@ public class DiscoveryBot extends SingleAgent {
 			
 			// Wait for server answer
 			try {
-				System.out.println("Esperando...");
 				msg = receiveACLMessage();
-				System.out.println("Mensaje recibido");
 				//System.out.println(msg);
 				if (msg.getPerformativeInt() == ACLMessage.INFORM) {
-					System.out.println(botName + ": Moving");
 				} else if(msg.getPerformativeInt() == ACLMessage.REFUSE) {
-						System.out.println(botName + ": Denied move");
 						return false;
 				} else {
 					System.err.println(botName + ": Unexpected answer on askMove : " + msg.getPerformativeInt());
@@ -351,8 +346,13 @@ public class DiscoveryBot extends SingleAgent {
 				totalWorldEnergy = result.getInt("energy");
 				goalFound = result.getBoolean("goal");
 				JSONArray jArray = result.getJSONArray("sensor");
-				for(int i=0;i<jArray.length();i++) {
-					sensor.add(jArray.getInt(i));
+				if(goalFound) state = 2;
+				else {
+					sensor.clear();
+					for(int i=0;i<jArray.length();i++) {
+						sensor.add(i,jArray.getInt(i));
+					}
+					if(sensor.contains(3)) state = 1;
 				}
 				//map.update(x, y, result.getJSONArray("sensor"));
 				map.update(x, y, jArray);
@@ -382,6 +382,7 @@ public class DiscoveryBot extends SingleAgent {
 			json.put("state", state);
 			json.put("total", totalWorldEnergy);
 			json.put("sensor", sensor);
+			json.put("role",role.toString());
 			
 			ACLMessage msg = new ACLMessage();
 			msg.setPerformative(ACLMessage.INFORM_REF);
@@ -392,12 +393,9 @@ public class DiscoveryBot extends SingleAgent {
 			send(msg);
 			
 			msg = receiveACLMessage();
-			System.out.println("Percepcion ha sido recibida");
 			//System.out.println(msg);
 			if (msg.getPerformativeInt() == ACLMessage.INFORM) {
-				System.out.println(botName + ": Moving");
 			} else if(msg.getPerformativeInt() == ACLMessage.REFUSE) {
-					System.out.println(botName + ": Denied move");
 			} else {
 				System.err.println(botName + ": Unexpected answer on sendPerception : " + msg.getPerformativeInt());
 			}
@@ -469,6 +467,8 @@ public class DiscoveryBot extends SingleAgent {
 					System.out.println(botName + ": Ok moved (" + x + ", " + y + ") => " + direction);
 				} else {
 					System.err.println(botName + ": Unexpected answer on move : " + msg.getPerformativeInt());
+					JSONObject js = new JSONObject(msg.getContent());
+					System.err.println(js.getString("result") + " " + js.getString("details"));
 					return false;
 				}
 			} catch (InterruptedException e) {
@@ -496,7 +496,6 @@ public class DiscoveryBot extends SingleAgent {
 	 * Send a "refuel" command to the server
 	 */
 	private void refuel() {
-		System.out.println("REFUELING");
 		JSONObject json = new JSONObject();
 		try {
 			json.put("command", "refuel");
@@ -513,7 +512,7 @@ public class DiscoveryBot extends SingleAgent {
 				msg = receiveACLMessage();
 				//System.out.println(msg);
 				if (msg.getPerformativeInt() == ACLMessage.INFORM) {
-					//System.out.println(msg);
+					System.out.println("REFUELING");
 				} else {
 					System.err.println("Unexpected answer on refuel : " + msg.getPerformativeInt());
 				}

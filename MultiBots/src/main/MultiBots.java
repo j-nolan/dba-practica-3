@@ -24,10 +24,10 @@ public class MultiBots {
 		
 		// Prepare three maps, one for each bot
 		Map map1 = new Map("Bot 1", new Point(0, 0), new Dimension(100, 100));
-		Map map2 = new Map("Bot 2", new Point(100, 0), new Dimension(100, 100));
-		Map map3 = new Map("Bot 3", new Point(200, 0), new Dimension(100, 100));
-		Map map4 = new Map("Bot 4", new Point(300, 0), new Dimension(100, 100));
-		Map map5 = new Map("Master", new Point(400, 0), new Dimension(100, 100));
+		Map map2 = new Map("Bot 2", new Point(150, 0), new Dimension(100, 100));
+		Map map3 = new Map("Bot 3", new Point(300, 0), new Dimension(100, 100));
+		Map map4 = new Map("Bot 4", new Point(450, 0), new Dimension(100, 100));
+		Map map5 = new Map("Master", new Point(600, 0), new Dimension(200, 200));
 
         
 		// Create and start discovery agents

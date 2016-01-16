@@ -16,8 +16,9 @@ public class MasterOfDrones extends SingleAgent {
 	private ArrayList<Integer> battery;
 	private ArrayList<Integer> x;
 	private ArrayList<Integer> y;
+	private ArrayList<String> roles;
 	
-	// The state of each drone, can be: ready, objectiveSeen, objectiveFound.
+	// The state of each drone, can be: 0 = ready, 1 = objectiveSeen, 2 = objectiveFound.
 	private ArrayList<Integer> state;
 	
 	// The world has a given amount of energy that decrease everytime an agent refuels
@@ -44,6 +45,7 @@ public class MasterOfDrones extends SingleAgent {
 		this.y = new ArrayList<Integer>(5);
 		this.state = new ArrayList<Integer>(5);
 		this.wantedMoves = new ArrayList<String>(5);
+		this.roles = new ArrayList<String>(5);
 		
 		for (int i=0;i<5;i++) {
 			battery.add(0);
@@ -51,6 +53,7 @@ public class MasterOfDrones extends SingleAgent {
 			y.add(0);
 			state.add(0);
 			wantedMoves.add("ayy");
+			roles.add("ayy");
 		}
 	}
 	
@@ -74,12 +77,12 @@ public class MasterOfDrones extends SingleAgent {
 				
 				if (msg.getPerformativeInt() == ACLMessage.INFORM_REF) {
 					int index = Character.getNumericValue(botName.charAt(3));
-					System.out.println(index);
 					battery.set(index,json.getInt("battery"));
 					x.set(index,json.getInt("x"));
 					y.set(index,json.getInt("y"));
 					state.set(index,json.getInt("state"));
 					totalWorldEnergy = json.getInt("total");
+					roles.set(index,json.getString("role"));
 					JSONArray jArray = json.getJSONArray("sensor");
 					map.update(x.get(index), y.get(index), jArray);
 					
@@ -111,14 +114,18 @@ public class MasterOfDrones extends SingleAgent {
 		String botName = null;
 		// Send request to master
 		// Wait for server answer
+		
 		try {
 			for(int i=0;i<4;i++) {
 				msg = receiveACLMessage();
 				botName = msg.getSender().getLocalName();
+				int index = Character.getNumericValue(botName.charAt(3));
 				//System.out.println(msg);
 				json = new JSONObject(msg.getContent());
 				if (msg.getPerformativeInt() == ACLMessage.INFORM) {
 					System.out.println(botName + " solicita: "+json.getString("command"));
+					wantedMoves.set(index,json.getString("command"));
+					
 				} else {
 					System.err.println(botName + ": Unexpected answer on evaluate : " + msg.getPerformativeInt());
 				}
@@ -129,6 +136,7 @@ public class MasterOfDrones extends SingleAgent {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+		
 			msg = new ACLMessage();
 			msg.setSender(getAid());
 			msg.addReceiver(new AgentID("bot1"));
@@ -148,9 +156,6 @@ public class MasterOfDrones extends SingleAgent {
 		// Loop getting info about all drones and the move they want, evaluating it and send each one if they can
 		// procceed or not
 		while (true) {
-			//getPerception();
-			//getPerception();
-			//getPerception();
 			getPerception();
 			evaluate();
 		}

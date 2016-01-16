@@ -29,4 +29,12 @@ public enum Role {
 	
 	// Whether the role can fly over obstacles or not
 	boolean fantasma;
+
+	public String toString() {
+		String st = null;
+		if (radarSize==3) st = "fly";
+		if (radarSize==5) st = "parrot";
+		if (radarSize==11) st = "falcon";
+		return st;
+	}
 }
