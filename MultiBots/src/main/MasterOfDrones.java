@@ -30,6 +30,8 @@ public class MasterOfDrones extends SingleAgent {
 	
 	private int[][] matrixMoves;
 	
+	private ArrayList<Integer> mejores;
+	
 	// The internal representation of the map
 	Map map;
 	
@@ -50,12 +52,14 @@ public class MasterOfDrones extends SingleAgent {
 		this.wantedMoves = new ArrayList<String>(5);
 		this.roles = new ArrayList<String>(5);
 		this.botNames = new ArrayList<String>(5);
+		this.mejores = new ArrayList<Integer>(5);
 		
 		for (int i=0;i<5;i++) {
 			battery.add(0);
 			x.add(0);
 			y.add(0);
 			state.add(0);
+			mejores.add(0);
 			wantedMoves.add("ayy");
 			roles.add("ayy");
 		}
@@ -82,7 +86,20 @@ public class MasterOfDrones extends SingleAgent {
 				aux = matrixMoves[row][i];
 			}
 		}
-		System.out.println("El mejor de la fila: "+aux+ " en la posicion: "+res);
+		System.out.println(row + ": El mejor de la fila: "+aux+ " en la posicion: "+res);
+		mejores.set(row,aux);
+		return res;
+	}
+	
+	private int bestBot() {
+		int res = 0;
+		int valor = 0;
+		for (int i=1;i<5;i++) {
+			if (mejores.get(i) >= valor) {
+				res = i;
+				valor = mejores.get(i);
+			}
+		}
 		return res;
 	}
 	/**
@@ -185,15 +202,23 @@ public class MasterOfDrones extends SingleAgent {
 				}
 			}
 		}
-		
 		for(int i=1;i<5;i++) {
 			if (battery.get(i) < 5) wantedMoves.set(i,"refuel");
 			else {
 				int greater = greaterRow(i);
 				//System.out.println("El mejor valor del bot "+botNames.get(i)+ " es: "+greater);
-				wantedMoves.set(i,directions[greater].toString());
+				mejores.set(i,matrixMoves[i][greater]);
 			}
-			System.out.println(botNames.get(i) + " quiere realizar: "+ wantedMoves.get(i));
+		}
+		
+		System.out.println(mejores.toString());
+
+		int mejorBot = bestBot();
+		System.out.println("El mejor es: " + mejorBot);
+		for (int i=1;i<5;i++) {
+			if (battery.get(i) < 5) wantedMoves.set(i,"refuel");
+			else if(i==mejorBot) wantedMoves.set(i,directions[greaterRow(i)].toString());
+			else wantedMoves.set(i,"idle");
 		}
 		try {
 		msg = new ACLMessage();
