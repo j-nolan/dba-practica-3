@@ -11,7 +11,8 @@ public enum MapPixel {
 	OBSTACLE(Color.BLACK),
 	BORDER(Color.DARK_GRAY),
 	GOAL(Color.RED),
-	UNKNOWN(Color.LIGHT_GRAY);
+	UNKNOWN(Color.LIGHT_GRAY),
+	DRONE(Color.GREEN);
 
 	// Constructor gets the color representation of the pixel (to display in a map for example)
 	private MapPixel(Color colorRepresentation) {

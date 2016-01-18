@@ -34,7 +34,7 @@ public class DiscoveryBot extends SingleAgent {
 	private boolean goalFound;
 	
 	// A flag indicating if the drone has the permit to move from MasterOfDrones
-	private boolean move;
+	private boolean move = true;
 	
 	// The action the drone wants to do on each cycle
 	private String wantedMove;
@@ -87,11 +87,14 @@ public class DiscoveryBot extends SingleAgent {
 
 		// Get into the loop
 		Direction nextDirection;
-		while (true) {
+		while (move) {
 			// Before moving, ask for a general perception update to see exactly where the robot is
 			updatePerception();
 			wantedMove=sendPerception();
-			if (!wantedMove.equals("idle")) {
+			if(wantedMove.equals("cancel")) {
+				sendCancel();
+			}
+			else if (!wantedMove.equals("idle")) {
 				if (wantedMove.equals("refuel")) refuel();
 				else move(wantedMove);
 			}
@@ -104,6 +107,15 @@ public class DiscoveryBot extends SingleAgent {
 		}*/
 	}
 	
+	private void sendCancel() {
+		move = false;
+		ACLMessage msg = new ACLMessage();
+		msg.setSender(getAid());
+		msg.setReceiver(new AgentID("Izar"));
+		msg.setPerformative(ACLMessage.CANCEL);
+		send(msg);
+	}
+
 	/**
 	 * This method ask permission to MasterOfDrones if he can refuel
 	 * @author Zacarías Romero
@@ -132,6 +144,7 @@ public class DiscoveryBot extends SingleAgent {
 						return false;
 				} else {
 					System.err.println(botName + ": Unexpected answer askRefuel : " + msg.getPerformativeInt());
+					sendCancel();
 					return false;
 				}
 			} catch (InterruptedException e) {
@@ -158,7 +171,7 @@ public class DiscoveryBot extends SingleAgent {
 		// specifing which world we want to be in
 		JSONObject jsonObject = new JSONObject();
 		try {
-			jsonObject.put("world", "map1");
+			jsonObject.put("world", "map2");
 			
 			// Create the ACL message that will send the first command to the server
 			ACLMessage msg = new ACLMessage();
@@ -202,6 +215,7 @@ public class DiscoveryBot extends SingleAgent {
 				}
 			} else {
 				System.err.println("Unexpected answer on getKey " + msg.getPerformativeInt());
+				sendCancel();
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -349,8 +363,12 @@ public class DiscoveryBot extends SingleAgent {
 				JSONObject js = new JSONObject(msg.getContent());
 				st = js.getString(botName);
 			} else if(msg.getPerformativeInt() == ACLMessage.REFUSE) {
-			} else {
+			} else if(msg.getPerformativeInt() == ACLMessage.CANCEL) {
+				st = "cancel";
+			}
+			else {
 				System.err.println(botName + ": Unexpected answer on sendPerception : " + msg.getPerformativeInt());
+				sendCancel();
 			}
 		} catch (JSONException | InterruptedException e) {
 			// TODO Auto-generated catch block
@@ -359,42 +377,6 @@ public class DiscoveryBot extends SingleAgent {
 		return st;
 	}
 	
-	/**
-	 * Compute the next direction in which the agent should go. This will depend on what strategy we defined
-	 * for the agent's role.
-	 * @author James Nolan
-	 * @return the direction if a next step has been found, or null if the algorithm doesn't find a next step (if stuck for example)
-	 */
-	private Direction think() {
-		// SPecific behaviour for each role. This must be coded further according to our strategy (not finished)
-		// For now, the strategy is very basic: each role juste loop over all the directions and goes in the first direction
-		// that doesn't crash the robot
-		Direction[] directions = Direction.values(); // All available directions
-		switch (this.role) {
-		case FLY:
-			for (Direction direction : directions) {
-				if (map.validMove(x, y, direction)) {
-					return direction;
-				}
-			}
-			break;
-		case PARROT:
-			for (Direction direction : directions) {
-				if (map.validMove(x, y, direction)) {
-					return direction;
-				}
-			}
-			break;
-		case FALCON:
-			for (Direction direction : directions) {
-				if (map.validMove(x, y, direction)) {
-					return direction;
-				}
-			}
-			break;
-		}
-		return null;
-	}
 	
 	/**
 	 * Send a message to the server to initiate a movement in a given direction
@@ -423,6 +405,7 @@ public class DiscoveryBot extends SingleAgent {
 					System.err.println(botName + ": Unexpected answer on move : " + msg.getPerformativeInt());
 					JSONObject js = new JSONObject(msg.getContent());
 					System.err.println(js.getString("result") + " " + js.getString("details"));
+					sendCancel();
 					return false;
 				}
 			} catch (InterruptedException e) {
@@ -469,6 +452,7 @@ public class DiscoveryBot extends SingleAgent {
 					System.out.println("REFUELING");
 				} else {
 					System.err.println("Unexpected answer on refuel : " + msg.getPerformativeInt());
+					sendCancel();
 				}
 			} catch (InterruptedException e) {
 				e.printStackTrace();

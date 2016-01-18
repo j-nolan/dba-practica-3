@@ -122,18 +122,25 @@ public class Map extends JFrame {
 	 * @param direction the desired direction
 	 * @return true if move is valid, false otherwise
 	 */
-	public boolean validMove(int robotX, int robotY, Direction direction) {
+	public boolean validMove(int robotX, int robotY, Direction direction, boolean ghost) {
 		int intention_x = robotX + direction.getXCoord();
 		int intention_y = robotY + direction.getYCoord();
-		if (intention_x >=100 || intention_y >=100) return false;
-		if (intention_x >= 0 && intention_y >= 0) {
-			//System.out.println("State at " + intention_x + ", " + intention_y + " is " + matrix[intention_y][intention_x]);
+		if (ghost) {
+			if (intention_x<100 && intention_y<100 && intention_x>=0 && intention_y>=0) return true;
 		}
-		return (intention_x >= 0 && intention_y >= 0 && (matrix[intention_y][intention_x] == MapPixel.FREE || matrix[intention_y][intention_x] == MapPixel.GOAL));
+		else {
+			if (intention_x >=100 || intention_y >=100) return false;
+			return (intention_x >= 0 && intention_y >= 0 && (matrix[intention_y][intention_x] == MapPixel.FREE || matrix[intention_y][intention_x] == MapPixel.GOAL));
+		}
+		return false;
 	}
 	
 	public MapPixel get(int x, int y) {
 		if (x>= SIZE_X || y>=SIZE_Y || x<0 || y<0) return MapPixel.BORDER;
 		else return matrix[y][x];
+	}
+	
+	public void setDrone(int x, int y) {
+		matrix[y][x] = MapPixel.DRONE;
 	}
 }
