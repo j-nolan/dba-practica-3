@@ -293,7 +293,10 @@ public class DiscoveryBot extends SingleAgent {
 				totalWorldEnergy = result.getInt("energy");
 				goalFound = result.getBoolean("goal");
 				JSONArray jArray = result.getJSONArray("sensor");
-				if(goalFound) state = 2;
+				if(goalFound) {
+					state = 2;
+					System.out.println("Soy " + botName + " y he alcanzado el objetivo");
+				}
 				else {
 					sensor.clear();
 					for(int i=0;i<jArray.length();i++) {
@@ -304,7 +307,7 @@ public class DiscoveryBot extends SingleAgent {
 				//map.update(x, y, result.getJSONArray("sensor"));
 				map.update(x, y, jArray);
 				
-				System.out.println(botName + " --> Battery : " + battery + ", x : " + x + ", y : " + y + " world energy : " + totalWorldEnergy + ", found goal: " + (goalFound ? "yes" : "no"));
+				System.out.println(botName + " --> Battery : " + battery + ", x : " + x + ", y : " + y + " world energy : " + totalWorldEnergy + ", found goal: " + (goalFound ? "yes" : "no") + " rol: " + role.toString());
 				
 			} else {
 				System.err.println("Server didn't inform us on sensors state, says " + msg.toString());
