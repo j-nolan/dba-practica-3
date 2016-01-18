@@ -37,22 +37,22 @@ public class MasterOfDrones extends SingleAgent {
 	
 	/**
 	 * Constructor
-	 * @author Zacarías Romero Sellamitou
+	 * @author Zacarï¿½as Romero Sellamitou
 	 * @param aid
 	 * @throws Exception
 	 */
 	public MasterOfDrones(AgentID aid, Map map) throws Exception {
 		super(aid);
-		System.out.println("MASTER!!");
+		//System.out.println("MASTER!!");
 		this.map = map;
-		this.battery = new ArrayList<Integer>(5);
-		this.x = new ArrayList<Integer>(5);
-		this.y = new ArrayList<Integer>(5);
-		this.state = new ArrayList<Integer>(5);
-		this.wantedMoves = new ArrayList<String>(5);
-		this.roles = new ArrayList<String>(5);
-		this.botNames = new ArrayList<String>(5);
-		this.mejores = new ArrayList<Integer>(5);
+		this.battery = new ArrayList<Integer>(4);
+		this.x = new ArrayList<Integer>(4);
+		this.y = new ArrayList<Integer>(4);
+		this.state = new ArrayList<Integer>(4);
+		this.wantedMoves = new ArrayList<String>(4);
+		this.roles = new ArrayList<String>(4);
+		this.botNames = new ArrayList<String>(4);
+		this.mejores = new ArrayList<Integer>(4);
 		
 		for (int i=0;i<5;i++) {
 			battery.add(0);
@@ -60,11 +60,8 @@ public class MasterOfDrones extends SingleAgent {
 			y.add(0);
 			state.add(0);
 			mejores.add(0);
-			wantedMoves.add("ayy");
-			roles.add("ayy");
 		}
 		
-		botNames.add("ayy");
 		botNames.add("bot1");
 		botNames.add("bot2");
 		botNames.add("bot3");
@@ -75,7 +72,7 @@ public class MasterOfDrones extends SingleAgent {
 	
 	/**
 	 * Method that returns the greater value in a row
-	 * @Author Zacarías Romero Sellamitou
+	 * @Author Zacarï¿½as Romero Sellamitou
 	 */
 	private int greaterRow(int row) {
 		int res = 0;
@@ -104,7 +101,7 @@ public class MasterOfDrones extends SingleAgent {
 	}
 	/**
 	 * Method
-	 * @author Zacarías Romero Sellamitou
+	 * @author Zacarï¿½as Romero Sellamitou
 	 */
 	private int check(int i, Direction direction) {
 		int res = 0;
@@ -142,47 +139,32 @@ public class MasterOfDrones extends SingleAgent {
 	}
 	/**
 	 * Method that gets the perception of the bots
-	 * @author Zacarías Romero Sellamitou
+	 * @author Zacarï¿½as Romero Sellamitou, Fernando Suarez
 	 */
 	
-	private void getPerception() {
-		JSONObject json = new JSONObject();
-		ACLMessage msg;
-		String botName = null;
-		// Send request to master
-		// Wait for server answer
+	private void getPerception(ACLMessage msg) {
+		String botName = msg.getSender().getLocalName();
+		
 		try {
-			for (int i=0;i<4;i++) {
-				msg = receiveACLMessage();
-				botName = msg.getSender().getLocalName();
-				//System.out.println(msg);
-				json = new JSONObject(msg.getContent());
-				
-				if (msg.getPerformativeInt() == ACLMessage.INFORM_REF) {
-					int index = Character.getNumericValue(botName.charAt(3));
-					battery.set(index,json.getInt("battery"));
-					x.set(index,json.getInt("x"));
-					y.set(index,json.getInt("y"));
-					state.set(index,json.getInt("state"));
-					totalWorldEnergy = json.getInt("total");
-					roles.set(index,json.getString("role"));
-					JSONArray jArray = json.getJSONArray("sensor");
-					map.update(x.get(index), y.get(index), jArray);
-				} else {
-					System.err.println(botName + ": Unexpected answer on getPerception : " + msg.getPerformativeInt());
-				}
-			}
-		} catch (InterruptedException e) {
-			e.printStackTrace();
+			JSONObject json = new JSONObject(msg.getContent());
+			int index = Character.getNumericValue(botName.charAt(3));
+			
+			battery.set(index,json.getInt("battery"));
+			x.set(index,json.getInt("x"));
+			y.set(index,json.getInt("y"));
+			state.set(index,json.getInt("state"));
+			totalWorldEnergy = json.getInt("total");
+			roles.set(index,json.getString("role"));
+			JSONArray jArray = json.getJSONArray("sensor");
+			map.update(x.get(index), y.get(index), jArray);
 		} catch (JSONException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
 	
 	/**
 	 * Method that evaluates the wanted moves of the drones and answers them
-	 * @author Zacarías Romero Sellamitou
+	 * @author Zacarï¿½as Romero Sellamitou
 	 */
 	
 	private void evaluate() {
@@ -238,18 +220,56 @@ public class MasterOfDrones extends SingleAgent {
 			e.printStackTrace();
 		}
 	}
+	
+	private boolean validateMovement (int x, int y) {
+		boolean result = true;
+		
+		for (int i=0; i<4; i++) {
+			if (this.x.get(i)==x && this.y.get(i)==y)
+				result = false;
+		}
+		
+		return result;
+	}
 
 	/**
 	 * Bot main execution loop. Before entering the loop, it will take care of doing the login
 	 * procedure (only for the initializer bot), get the key from the server and check in to the world.
-	 * @author James Nolan
+	 * @author James Nolan, Fernando Suarez
 	 */
 	public void execute() {
-		// Loop getting info about all drones and the move they want, evaluating it and send each one if they can
-		// procceed or not
+		// En cada iteracion del bucle se obtiene un mensaje y se actua segÃºn su intenciÃ³n
+		ACLMessage msg = null;
+		String senderBot = null;
 		while (true) {
-			getPerception();
-			evaluate();
+//			getPerception();
+//			evaluate();
+			try {
+				msg = this.receiveACLMessage();
+				senderBot = msg.getSender().getLocalName();
+				
+				
+				if (msg.getPerformativeInt() == ACLMessage.INFORM_REF)
+					this.getPerception(msg);
+				else if (msg.getPerformativeInt() == ACLMessage.QUERY_IF) {
+					JSONObject json = new JSONObject(msg.getContent());
+					boolean moveOK = this.validateMovement(json.getInt("x"), json.getInt("y"));
+					ACLMessage resp = new ACLMessage();
+					resp.setSender(this.getAid());
+					resp.setReceiver(new AgentID(senderBot));
+					if (moveOK)
+						resp.setPerformative(ACLMessage.CONFIRM);
+					else
+						resp.setPerformative(ACLMessage.DISCONFIRM);
+					this.send(resp);
+				}
+				
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			} catch (JSONException e) {
+				e.printStackTrace();
+			}
+				
 		}
 	}
 }

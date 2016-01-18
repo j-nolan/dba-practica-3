@@ -26,6 +26,9 @@ public class DiscoveryBot extends SingleAgent {
 	// The battery, the position of the agent
 	private int battery, x, y;
 	
+	// The possition of the goal (-1 at start)
+	private int x_goal, y_goal;
+	
 	// The world has a given amount of energy that decrease everytime an agent refuels
 	// The total remaining amount is saved in this attribute
 	private int totalWorldEnergy;
@@ -61,12 +64,13 @@ public class DiscoveryBot extends SingleAgent {
 		this.map = map;
 		this.botName = botName;
 		this.state = 0;
+		this.x_goal = y_goal = -1;
 	}
 	
 	/**
 	 * Bot main execution loop. Before entering the loop, it will take care of doing the login
 	 * procedure (only for the initializer bot), get the key from the server and check in to the world.
-	 * @author James Nolan
+	 * @author James Nolan, Fernando Suarez
 	 */
 	public void execute() {
 		// Is this bot supposed to do the initialization procedure?
@@ -87,13 +91,36 @@ public class DiscoveryBot extends SingleAgent {
 
 		// Get into the loop
 		Direction nextDirection;
-		while (true) {
+		boolean end = false;
+		while (!end) {
 			// Before moving, ask for a general perception update to see exactly where the robot is
-			updatePerception();
-			wantedMove=sendPerception();
-			if (!wantedMove.equals("idle")) {
-				if (wantedMove.equals("refuel")) refuel();
-				else move(wantedMove);
+			this.updatePerception();
+			this.sendPerception();
+//			wantedMove=sendPerception();
+//			if (!wantedMove.equals("idle")) {
+//				if (wantedMove.equals("refuel")) refuel();
+//				else move(wantedMove);
+//			}
+			
+				
+			switch (this.role) {
+				case FLY:
+					if (!goalFound) {
+						Direction d = this.think();
+						if (this.requestMove(d))
+							this.move(d.toString());
+					} else {
+						end = true;
+					}
+					break;
+				case PARROT:
+	
+					break;
+				case FALCON:
+						Direction d = this.think();
+						if (this.requestMove(d))
+							this.move(d.toString());
+					break;
 			}
 		}
 		
@@ -106,7 +133,7 @@ public class DiscoveryBot extends SingleAgent {
 	
 	/**
 	 * This method ask permission to MasterOfDrones if he can refuel
-	 * @author Zacarías Romero
+	 * @author Zacarï¿½as Romero
 	 */
 	
 	private boolean askRefuel() {
@@ -139,7 +166,6 @@ public class DiscoveryBot extends SingleAgent {
 				return false;
 			}
 		} catch (JSONException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 			return false;
 		}
@@ -316,7 +342,7 @@ public class DiscoveryBot extends SingleAgent {
 	
 	/**
 	 * Send current perception to MasterOfDrones so he can make useful choices
-	 * @author Zacarías Romero Sellamitou
+	 * @author Zacarï¿½as Romero Sellamitou
 	 * @throws InterruptedException 
 	 */
 	
@@ -330,7 +356,7 @@ public class DiscoveryBot extends SingleAgent {
 			json.put("state", state);
 			json.put("total", totalWorldEnergy);
 			json.put("sensor", sensor);
-			json.put("role",role.toString());
+			json.put("role", role.toString());
 			
 			ACLMessage msg = new ACLMessage();
 			msg.setPerformative(ACLMessage.INFORM_REF);
@@ -350,7 +376,6 @@ public class DiscoveryBot extends SingleAgent {
 				System.err.println(botName + ": Unexpected answer on sendPerception : " + msg.getPerformativeInt());
 			}
 		} catch (JSONException | InterruptedException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		return st;
@@ -367,30 +392,43 @@ public class DiscoveryBot extends SingleAgent {
 		// For now, the strategy is very basic: each role juste loop over all the directions and goes in the first direction
 		// that doesn't crash the robot
 		Direction[] directions = Direction.values(); // All available directions
+		Direction d = null;
 		switch (this.role) {
-		case FLY:
-			for (Direction direction : directions) {
-				if (map.validMove(x, y, direction)) {
-					return direction;
+			case FLY:
+				ACLMessage msg;
+				try {
+					if (state == 0) {
+						msg = this.receiveACLMessage();
+						// No se mueve hasta que otro bot encuentra el objetivo y recibe sus coordenadas
+						if (msg.getPerformativeInt() == ACLMessage.INFORM) {
+							JSONObject content = new JSONObject(msg.getContent()).getJSONObject("goal");
+							state = 1;
+							x_goal = content.getInt("x_goal");
+							y_goal = content.getInt("y_goal");
+							d = this.getDirectionToGoalFly();
+						}
+					} else if (state == 1){
+						d = this.getDirectionToGoalFly();
+					}
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				} catch (JSONException e) {
+					e.printStackTrace();
 				}
-			}
-			break;
-		case PARROT:
-			for (Direction direction : directions) {
-				if (map.validMove(x, y, direction)) {
-					return direction;
+				
+				break;
+			case PARROT:
+				// serÃ­a similar a FALCON
+				break;
+			case FALCON:
+				if (state == 0) {
+					// buscar objetivo
+				} else if (state == 1) {
+					// ir al objetivo
 				}
-			}
-			break;
-		case FALCON:
-			for (Direction direction : directions) {
-				if (map.validMove(x, y, direction)) {
-					return direction;
-				}
-			}
-			break;
+				break;
 		}
-		return null;
+		return d;
 	}
 	
 	/**
@@ -428,7 +466,6 @@ public class DiscoveryBot extends SingleAgent {
 			}
 			
 		} catch (JSONException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 			return false;
 		}
@@ -472,8 +509,64 @@ public class DiscoveryBot extends SingleAgent {
 			}
 			
 		} catch (JSONException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+	}
+	
+	/**
+	 * @author Fernando Suarez
+	 * @return the next direction to go to the goal (only for fly)
+	 */
+	private Direction getDirectionToGoalFly () {
+		Direction d = null;
+		
+		int x_aux = x_goal-x;
+		int y_aux = y_goal-y;
+		
+		if (x_aux>0 && y_aux>0) 			d=Direction.SOUTH_EAST;
+		else if (x_aux>0 && y_aux<0) 	d=Direction.NORTH_EAST;
+		else if (x_aux>0 && y_aux==0) 	d=Direction.EAST;
+		else if (x_aux<0 && y_aux>0)	d=Direction.SOUTH_WEST;
+		else if (x_aux<0 && y_aux<0)	d=Direction.NORTH_WEST;
+		else if (x_aux<0 && y_aux==0)	d=Direction.WEST;
+		else if (x_aux==0 && y_aux>0)	d=Direction.SOUTH;
+		else if (x_aux==0 && y_aux<0)	d=Direction.NORTH;
+		
+		return d;
+	}
+	
+	/**
+	 * @author Fernando Suarez
+	 * @return true if the movement is possible (no crash with other bot)
+	 */
+	private boolean requestMove (Direction d) {
+		boolean move = false;
+		int x_aux = this.x+d.getXCoord();
+		int y_aux = this.y+d.getYCoord();
+		JSONObject json = new JSONObject();
+		ACLMessage msg = new ACLMessage();
+		
+		try {
+			json.put("x", x_aux);
+			json.put("y", y_aux);
+			msg.setPerformative(ACLMessage.QUERY_IF);
+			msg.setContent(json.toString());
+			msg.setSender(this.getAid());
+			msg.setReceiver(new AgentID("MasterOfDrones"));
+			this.send(msg);
+			
+			msg = this.receiveACLMessage();
+			if (msg.getPerformativeInt() == ACLMessage.CONFIRM) {
+				move = true;
+			} else {
+				move = false;
+			}
+		} catch (JSONException e) {
+			e.printStackTrace();
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+		
+		return move;
 	}
 }
