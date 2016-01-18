@@ -116,48 +116,6 @@ public class DiscoveryBot extends SingleAgent {
 		send(msg);
 	}
 
-	/**
-	 * This method ask permission to MasterOfDrones if he can refuel
-	 * @author Zacarías Romero
-	 */
-	
-	private boolean askRefuel() {
-		JSONObject json = new JSONObject();
-		// Send request to master
-		try {
-			json.put("command", "refuel");
-			ACLMessage msg = new ACLMessage();
-			msg.setSender(getAid());
-			msg.setReceiver(new AgentID("MasterOfDrones"));
-			msg.setPerformative(ACLMessage.INFORM);
-			msg.setContent(json.toString());
-			send(msg);
-			
-			// Wait for server answer
-			try {
-				msg = receiveACLMessage();
-				//System.out.println(msg);
-				if (msg.getPerformativeInt() == ACLMessage.INFORM) {
-					System.out.println(botName + ": Refueled");
-				} else if(msg.getPerformativeInt() == ACLMessage.REFUSE) {
-						System.out.println(botName + ": Denied Refuel");
-						return false;
-				} else {
-					System.err.println(botName + ": Unexpected answer askRefuel : " + msg.getPerformativeInt());
-					sendCancel();
-					return false;
-				}
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-				return false;
-			}
-		} catch (JSONException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-			return false;
-		}
-		return true;
-	}
 
 	/**
 	 * This method asks the agent to perform the initial login procedure. It sends a subscribe
@@ -171,7 +129,7 @@ public class DiscoveryBot extends SingleAgent {
 		// specifing which world we want to be in
 		JSONObject jsonObject = new JSONObject();
 		try {
-			jsonObject.put("world", "map4");
+			jsonObject.put("world", "map2");
 			
 			// Create the ACL message that will send the first command to the server
 			ACLMessage msg = new ACLMessage();
@@ -207,9 +165,9 @@ public class DiscoveryBot extends SingleAgent {
 				if (initializer) {
 					// Broadcast the key to other bots
 					msg.clearAllReceiver();
-					msg.addReceiver(new AgentID("bot11"));
-					msg.addReceiver(new AgentID("bot22"));
-					msg.addReceiver(new AgentID("bot33"));
+					msg.addReceiver(new AgentID("bot1"));
+					msg.addReceiver(new AgentID("bot2"));
+					msg.addReceiver(new AgentID("bot3"));
 					//msg.addReceiver(new AgentID("bot4"));
 					send(msg);
 				}
@@ -352,7 +310,7 @@ public class DiscoveryBot extends SingleAgent {
 			ACLMessage msg = new ACLMessage();
 			msg.setPerformative(ACLMessage.INFORM_REF);
 			msg.setSender(getAid());
-			msg.setReceiver(new AgentID("MasterOfDrones"));
+			msg.setReceiver(new AgentID("MasterOfDroness"));
 			msg.setContent(json.toString());
 			
 			send(msg);

@@ -18,13 +18,15 @@ public class MasterOfDrones extends SingleAgent {
 	private ArrayList<Integer> y;
 	private ArrayList<String> roles;
 	private ArrayList<String> botNames;
-	private int goalX = -1;
-	private int goalY = -1;
+	private ArrayList<Double> equis;
+	private ArrayList<Double> ygriega;
+	private double goalX = -1;
+	private double goalY = -1;
 	private boolean work = true;
 	
 	// Variables to perform right hand algorithm
 	private double max;
-	private boolean rightHand = false;
+	private ArrayList<Boolean> rightHand;
 	private Direction wantedDirection;
 	
 	private ArrayList<Integer> lastDirection;
@@ -69,6 +71,9 @@ public class MasterOfDrones extends SingleAgent {
 		this.mejores = new ArrayList<Integer>(5);
 		this.scanner = new double[100][100];
 		this.lastDirection = new ArrayList<Integer>(5);
+		this.rightHand = new ArrayList<Boolean>(5);
+		this.equis = new ArrayList<Double>(15);
+		this.ygriega = new ArrayList<Double>(15);
 		
 		for (int i=0;i<5;i++) {
 			lastDirection.add(i,10);
@@ -81,13 +86,14 @@ public class MasterOfDrones extends SingleAgent {
 			mejores.add(0);
 			wantedMoves.add("ayy");
 			roles.add("ayy");
+			rightHand.add(false);
 		}
 		
 		botNames.add("ayy");
-		botNames.add("bot11");
-		botNames.add("bot22");
-		botNames.add("bot33");
-		botNames.add("bot44");
+		botNames.add("bot1");
+		botNames.add("bot2");
+		botNames.add("bot3");
+		botNames.add("bot4");
 		
 		matrixMoves = new int[5][8];
 	}
@@ -120,6 +126,22 @@ public class MasterOfDrones extends SingleAgent {
 			}
 		}
 		return res;
+	}
+	
+	private double equisMedia() {
+		double res = 0;
+		for (int i=0;i<equis.size();i++) {
+			res+=equis.get(i);
+		}
+		return res/equis.size();
+	}
+	
+	private double yMedia() {
+		double res = 0;
+		for (int i=0;i<ygriega.size();i++) {
+			res+=ygriega.get(i);
+		}
+		return res/ygriega.size();
 	}
 	/**
 	 * Method
@@ -188,20 +210,42 @@ public class MasterOfDrones extends SingleAgent {
 					JSONArray jArray = json.getJSONArray("sensor");
 					if(state.get(index) == 2) {
 						statee = 2;
+						if(goalX==-1) {
+							boolean find = true;
+							for(int k=0;k<jArray.length() && find;k++) {
+								if(jArray.getInt(k) == 3) {
+									int sqrt = (int)Math.sqrt(jArray.length());
+									equis.add((double)x.get(index) + ((k%sqrt) - sqrt/2));
+									ygriega.add((double)y.get(index) + ((k/sqrt) - sqrt/2));
+									System.out.println(index+ ": ENCONTRADO OBJETIVO x:" + (x.get(index) + ((k%sqrt) - sqrt/2)) + " y:"+(y.get(index) + ((k/sqrt) - sqrt/2)));
+									//makeScanner();
+									if(statee == 0) statee = 1;
+									//find = false;
+								}
+							}
+							goalX = equisMedia();
+							goalY = yMedia();
+							System.out.println("La media es - x: "+goalX+" y: "+goalY);
+							makeScanner();
+						}
 					}
 					if(state.get(index) == 1 && goalX==-1) {
 						boolean find = true;
 						for(int k=0;k<jArray.length() && find;k++) {
 							if(jArray.getInt(k) == 3) {
 								int sqrt = (int)Math.sqrt(jArray.length());
-								goalX = (x.get(index) + ((k%sqrt) - sqrt/2)) +1;
-								goalY = (y.get(index) + ((k/sqrt) - sqrt/2)) +1;
-								System.out.println(index+ ": ENCONTRADO OBJETIVO x:" + goalX + " y:"+goalY);
-								makeScanner();
+								equis.add((double)x.get(index) + ((k%sqrt) - sqrt/2));
+								ygriega.add((double)y.get(index) + ((k/sqrt) - sqrt/2));
+								System.out.println(index+ ": ENCONTRADO OBJETIVO x:" + (x.get(index) + ((k%sqrt) - sqrt/2)) + " y:"+(y.get(index) + ((k/sqrt) - sqrt/2)));
+								//makeScanner();
 								if(statee == 0) statee = 1;
-								find = false;
+								//find = false;
 							}
 						}
+						goalX = equisMedia();
+						goalY = yMedia();
+						System.out.println("La media es - x: "+goalX+" y: "+goalY);
+						makeScanner();
 					}
 					map.update(x.get(index), y.get(index), jArray);
 				} else {
@@ -307,10 +351,10 @@ public class MasterOfDrones extends SingleAgent {
 		if (finish()) {
 			ACLMessage msg = new ACLMessage();
 			msg.setSender(getAid());
-			msg.addReceiver(new AgentID("bot11"));
-			msg.addReceiver(new AgentID("bot22"));
-			msg.addReceiver(new AgentID("bot33"));
-			msg.addReceiver(new AgentID("bot44"));
+			msg.addReceiver(new AgentID("bot1"));
+			msg.addReceiver(new AgentID("bot2"));
+			msg.addReceiver(new AgentID("bot3"));
+			msg.addReceiver(new AgentID("bot4"));
 			msg.setPerformative(ACLMessage.CANCEL);
 			send(msg);
 			work = false;
@@ -398,10 +442,10 @@ public class MasterOfDrones extends SingleAgent {
 		}
 		msg.setContent(json.toString());
 		msg.setSender(getAid());
-		msg.addReceiver(new AgentID("bot11"));
-		msg.addReceiver(new AgentID("bot22"));
-		msg.addReceiver(new AgentID("bot33"));
-		msg.addReceiver(new AgentID("bot44"));
+		msg.addReceiver(new AgentID("bot1"));
+		msg.addReceiver(new AgentID("bot2"));
+		msg.addReceiver(new AgentID("bot3"));
+		msg.addReceiver(new AgentID("bot4"));
 		msg.setPerformative(ACLMessage.INFORM);
 		send(msg);
 		} catch (JSONException e) {
@@ -415,9 +459,9 @@ public class MasterOfDrones extends SingleAgent {
 
 	private String goObjective(int bot) {
 		if (battery.get(bot) < 5) return "refuel";
-		if(rightHand) {
+		if(rightHand.get(bot)) {
 			if(state.get(bot) == 2) {
-				rightHand = false;
+				rightHand.set(bot,false);
 				return "idle";
 			}
 			else {
@@ -425,132 +469,160 @@ public class MasterOfDrones extends SingleAgent {
 			switch(wantedDirection) {
 			case EAST:
 				if(scanner[y.get(bot)][x.get(bot)]<max) {
-					rightHand = false;
+					rightHand.set(bot,false);
 					return goObjective(bot);
 				} else {
 					if(!crash(x.get(bot),y.get(bot),Direction.EAST,bot)) {
+						wantedDirection = Direction.SOUTH;
 						return "moveE";
 					}
 					else if(!crash(x.get(bot),y.get(bot),Direction.NORTH_EAST,bot)) {
+						wantedDirection = Direction.SOUTH_EAST;
 						return "moveNE";
 					} else if(!crash(x.get(bot),y.get(bot),Direction.NORTH,bot)) {
+						wantedDirection = Direction.EAST;
 						return "moveN";
+					} else {
+						rightHand.set(bot,false);
+						return goObjective(bot);
 					}
 				}
-				break;
 			case NORTH:
 				if(scanner[y.get(bot)][x.get(bot)]<max) {
-					rightHand = false;
+					rightHand.set(bot,false);
 					return goObjective(bot);
 				} else {
 					if(!crash(x.get(bot),y.get(bot),Direction.NORTH,bot)) {
+						wantedDirection = Direction.EAST;
 						return "moveN";
 					}
 					else if(!crash(x.get(bot),y.get(bot),Direction.NORTH_WEST,bot)) {
+						wantedDirection = Direction.NORTH_EAST;
 						return "moveNW";
 					} else if(!crash(x.get(bot),y.get(bot),Direction.WEST,bot)) {
+						wantedDirection = Direction.NORTH;
 						return "moveW";
+					} else {
+						rightHand.set(bot,false);
+						return goObjective(bot);
 					}
 				}
-				break;
 			case NORTH_EAST:
 				if(scanner[y.get(bot)][x.get(bot)]<max) {
-					rightHand = false;
+					rightHand.set(bot,false);
 					return goObjective(bot);
 				} else {
 					if(!crash(x.get(bot),y.get(bot),Direction.NORTH_EAST,bot)) {
+						wantedDirection = Direction.SOUTH_EAST;
 						return "moveNE";
-					}
-					else if(!crash(x.get(bot),y.get(bot),Direction.EAST,bot)) {
-						return "moveE";
 					} else if(!crash(x.get(bot),y.get(bot),Direction.NORTH,bot)) {
+						wantedDirection = Direction.EAST;
 						return "moveN";
 					} else if(!crash(x.get(bot),y.get(bot),Direction.NORTH_WEST,bot)) {
+						wantedDirection = Direction.NORTH_EAST;
 						return "moveNW";
+					}else {
+						rightHand.set(bot,false);
+						return goObjective(bot);
 					}
 				}
-				break;
 			case NORTH_WEST:
 				if(scanner[y.get(bot)][x.get(bot)]<max) {
-					rightHand = false;
+					rightHand.set(bot,false);
 					return goObjective(bot);
 				} else {
 					if(!crash(x.get(bot),y.get(bot),Direction.NORTH_WEST,bot)) {
+						wantedDirection = Direction.NORTH_EAST;
 						return "moveNW";
-					}
-					else if(!crash(x.get(bot),y.get(bot),Direction.WEST,bot)) {
+					} else if(!crash(x.get(bot),y.get(bot),Direction.WEST,bot)) {
+						wantedDirection = Direction.NORTH;
 						return "moveW";
-					} else if(!crash(x.get(bot),y.get(bot),Direction.NORTH,bot)) {
-						return "moveN";
-					} else if(!crash(x.get(bot),y.get(bot),Direction.NORTH_EAST,bot)) {
-						return "moveNE";
+					} else if(!crash(x.get(bot),y.get(bot),Direction.SOUTH_WEST,bot)) {
+						wantedDirection = Direction.NORTH_WEST;
+						return "moveSW";
+					}else {
+						rightHand.set(bot,false);
+						return goObjective(bot);
 					}
 				}
-				break;
 			case SOUTH:
 				if(scanner[y.get(bot)][x.get(bot)]<max) {
-					rightHand = false;
+					rightHand.set(bot,false);
 					return goObjective(bot);
 				} else {
 					if(!crash(x.get(bot),y.get(bot),Direction.SOUTH,bot)) {
+						wantedDirection = Direction.WEST;
 						return "moveS";
 					}
-					else if(!crash(x.get(bot),y.get(bot),Direction.NORTH_EAST,bot)) {
-						return "moveNE";
+					else if(!crash(x.get(bot),y.get(bot),Direction.SOUTH_EAST,bot)) {
+						wantedDirection = Direction.SOUTH_WEST;
+						return "moveSE";
 					} else if(!crash(x.get(bot),y.get(bot),Direction.EAST,bot)) {
+						wantedDirection = Direction.SOUTH;
 						return "moveE";
+					}else {
+						rightHand.set(bot,false);
+						return goObjective(bot);
 					}
 				}
-				break;
 			case SOUTH_EAST:
 				if(scanner[y.get(bot)][x.get(bot)]<max) {
-					rightHand = false;
+					rightHand.set(bot,false);
 					return goObjective(bot);
 				} else {
 					if(!crash(x.get(bot),y.get(bot),Direction.SOUTH_EAST,bot)) {
+						wantedDirection = Direction.SOUTH_WEST;
 						return "moveSE";
-					}
-					else if(!crash(x.get(bot),y.get(bot),Direction.EAST,bot)) {
+					} else if(!crash(x.get(bot),y.get(bot),Direction.EAST,bot)) {
+						wantedDirection = Direction.SOUTH;
 						return "moveE";
-					} else if(!crash(x.get(bot),y.get(bot),Direction.SOUTH,bot)) {
-						return "moveS";
-					} else if(!crash(x.get(bot),y.get(bot),Direction.SOUTH_WEST,bot)) {
-						return "moveSW";
+					} else if(!crash(x.get(bot),y.get(bot),Direction.NORTH_EAST,bot)) {
+						wantedDirection = Direction.SOUTH_EAST;
+						return "moveNE";
+					}else {
+						rightHand.set(bot,false);
+						return goObjective(bot);
 					}
 				}
-				break;
 			case SOUTH_WEST:
 				if(scanner[y.get(bot)][x.get(bot)]<max) {
-					rightHand = false;
+					rightHand.set(bot,false);
 					return goObjective(bot);
 				} else {
 					if(!crash(x.get(bot),y.get(bot),Direction.SOUTH_WEST,bot)) {
+						wantedDirection = Direction.NORTH_WEST;
 						return "moveSW";
-					}
-					else if(!crash(x.get(bot),y.get(bot),Direction.WEST,bot)) {
-						return "moveW";
 					} else if(!crash(x.get(bot),y.get(bot),Direction.SOUTH,bot)) {
+						wantedDirection = Direction.WEST;
 						return "moveS";
 					} else if(!crash(x.get(bot),y.get(bot),Direction.SOUTH_EAST,bot)) {
+						wantedDirection = Direction.SOUTH_WEST;
 						return "moveSE";
+					}else {
+						rightHand.set(bot,false);
+						return goObjective(bot);
 					}
 				}
-				break;
 			case WEST:
 				if(scanner[y.get(bot)][x.get(bot)]<max) {
-					rightHand = false;
+					rightHand.set(bot,false);
 					return goObjective(bot);
 				} else {
 					if(!crash(x.get(bot),y.get(bot),Direction.WEST,bot)) {
+						wantedDirection = Direction.NORTH;
 						return "moveW";
 					}
 					else if(!crash(x.get(bot),y.get(bot),Direction.SOUTH_WEST,bot)) {
+						wantedDirection = Direction.NORTH_WEST;
 						return "moveSW";
 					} else if(!crash(x.get(bot),y.get(bot),Direction.SOUTH,bot)) {
+						wantedDirection = Direction.WEST;
 						return "moveS";
+					}else {
+						rightHand.set(bot,false);
+						return goObjective(bot);
 					}
 				}
-				break;
 			default:
 				break;
 			}
@@ -583,7 +655,7 @@ public class MasterOfDrones extends SingleAgent {
 					if (!crash(x.get(bot),y.get(bot),Direction.NORTH_WEST,bot))	return "moveNW";
 					else {
 						System.out.println(bot+ ": Activando mano derecha");
-						rightHand = true;
+						rightHand.set(bot,true);;
 						max = scanner[y.get(bot)][x.get(bot)];
 						wantedDirection = Direction.NORTH_WEST;
 						return goObjective(bot);
@@ -592,7 +664,7 @@ public class MasterOfDrones extends SingleAgent {
 					if (!crash(x.get(bot),y.get(bot),Direction.NORTH,bot))return "moveN";
 					else {
 						System.out.println(bot+ ": Activando mano derecha");
-						rightHand = true;
+						rightHand.set(bot,true);;
 						max = scanner[y.get(bot)][x.get(bot)];
 						wantedDirection = Direction.NORTH;
 						return goObjective(bot);
@@ -601,7 +673,7 @@ public class MasterOfDrones extends SingleAgent {
 					if (!crash(x.get(bot),y.get(bot),Direction.NORTH_EAST,bot))return "moveNE";
 					else {
 						System.out.println(bot+ ": Activando mano derecha");
-						rightHand = true;
+						rightHand.set(bot,true);;
 						max = scanner[y.get(bot)][x.get(bot)];
 						wantedDirection = Direction.NORTH_EAST;
 						return goObjective(bot);
@@ -610,7 +682,7 @@ public class MasterOfDrones extends SingleAgent {
 					if (!crash(x.get(bot),y.get(bot),Direction.WEST,bot))return "moveW";
 					else {
 						System.out.println(bot+ ": Activando mano derecha");
-						rightHand = true;
+						rightHand.set(bot,true);;
 						max = scanner[y.get(bot)][x.get(bot)];
 						wantedDirection = Direction.WEST;
 						return goObjective(bot);
@@ -621,7 +693,7 @@ public class MasterOfDrones extends SingleAgent {
 					if (!crash(x.get(bot),y.get(bot),Direction.EAST,bot))return "moveE";
 					else {
 						System.out.println(bot+ ": Activando mano derecha");
-						rightHand = true;
+						rightHand.set(bot,true);;
 						max = scanner[y.get(bot)][x.get(bot)];
 						wantedDirection = Direction.EAST;
 						return goObjective(bot);
@@ -630,7 +702,7 @@ public class MasterOfDrones extends SingleAgent {
 					if (!crash(x.get(bot),y.get(bot),Direction.SOUTH_WEST,bot))return "moveSW";
 					else {
 						System.out.println(bot+ ": Activando mano derecha");
-						rightHand = true;
+						rightHand.set(bot,true);;
 						max = scanner[y.get(bot)][x.get(bot)];
 						wantedDirection = Direction.SOUTH_WEST;
 						return goObjective(bot);
@@ -639,7 +711,7 @@ public class MasterOfDrones extends SingleAgent {
 					if (!crash(x.get(bot),y.get(bot),Direction.SOUTH,bot))return "moveS";
 					else {
 						System.out.println(bot+ ": Activando mano derecha");
-						rightHand = true;
+						rightHand.set(bot,true);;
 						max = scanner[y.get(bot)][x.get(bot)];
 						wantedDirection = Direction.SOUTH;
 						return goObjective(bot);
@@ -648,7 +720,7 @@ public class MasterOfDrones extends SingleAgent {
 					if (!crash(x.get(bot),y.get(bot),Direction.SOUTH_EAST,bot))return "moveSE";
 					else {
 						System.out.println(bot+ ": Activando mano derecha");
-						rightHand = true;
+						rightHand.set(bot,true);
 						max = scanner[y.get(bot)][x.get(bot)];
 						wantedDirection = Direction.SOUTH_EAST;
 						return goObjective(bot);
