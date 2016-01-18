@@ -68,9 +68,9 @@ public class MasterOfDrones extends SingleAgent {
 		this.botNames = new ArrayList<String>(5);
 		this.mejores = new ArrayList<Integer>(5);
 		this.scanner = new double[100][100];
-		this.lastDirection = new ArrayList<Integer>(2);
+		this.lastDirection = new ArrayList<Integer>(5);
 		
-		for (int i=0;i<2;i++) {
+		for (int i=0;i<5;i++) {
 			lastDirection.add(i,10);
 		}
 		for (int i=0;i<5;i++) {
@@ -384,13 +384,13 @@ public class MasterOfDrones extends SingleAgent {
 				if(battery.get(i) < 5) wantedMoves.set(i,"refuel");
 				else {
 					wantedMoves.set(i,directions[greaterRow(i)].toString());
-					lastDirection.set(auxx,greaterRow(i));
-					auxx = (auxx+1) % 2;
 				}
 			}
 			else wantedMoves.set(i,"idle");
 		}
+		
 		System.out.println(wantedMoves.toString());
+		
 		try {
 		msg = new ACLMessage();
 		for(int i=1;i<5;i++) {
@@ -416,6 +416,7 @@ public class MasterOfDrones extends SingleAgent {
 	private String goObjective(int bot) {
 		if (battery.get(bot) < 5) return "refuel";
 		if(rightHand) {
+			System.out.println(bot +": MANO DERECHA con: "+wantedDirection.toString());
 			switch(wantedDirection) {
 			case EAST:
 				if(scanner[y.get(bot)][x.get(bot)]<max) {
@@ -564,31 +565,38 @@ public class MasterOfDrones extends SingleAgent {
 					}
 				}
 			}
+			for(int i=0;i<9;i++) {
+				int x_aux = x.get(bot) + ((i%3) - 1);
+				int y_aux = y.get(bot) + ((i/3) - 1);
+				if(i%3 == 0) System.out.println();
+				if (x_aux<100 && y_aux<100 && x_aux>=0 && y_aux>=0) System.out.print(scanner[y_aux][x_aux]);
+				else System.out.print(-1);
+			}
 			System.out.println(bot + " moviendose al objetivo en dirección: " +pos);
 			switch(pos) {
 				case 0:
-					if (!crash(x.get(bot),y.get(bot),Direction.NORTH_WEST,bot) || roles.get(bot).equals("fly"))	return "moveNW";
+					if (!crash(x.get(bot),y.get(bot),Direction.NORTH_WEST,bot))	return "moveNW";
 					else {
 						rightHand = true;
 						max = scanner[y.get(bot)][x.get(bot)];
 						wantedDirection = Direction.NORTH_WEST;
 					}
 				case 1:
-					if (!crash(x.get(bot),y.get(bot),Direction.NORTH,bot) || roles.get(bot).equals("fly"))return "moveN";
+					if (!crash(x.get(bot),y.get(bot),Direction.NORTH,bot))return "moveN";
 					else {
 						rightHand = true;
 						max = scanner[y.get(bot)][x.get(bot)];
 						wantedDirection = Direction.NORTH;
 					}
 				case 2:
-					if (!crash(x.get(bot),y.get(bot),Direction.NORTH_EAST,bot) || roles.get(bot).equals("fly"))return "moveNE";
+					if (!crash(x.get(bot),y.get(bot),Direction.NORTH_EAST,bot))return "moveNE";
 					else {
 						rightHand = true;
 						max = scanner[y.get(bot)][x.get(bot)];
 						wantedDirection = Direction.NORTH_EAST;
 					}
 				case 3:
-					if (!crash(x.get(bot),y.get(bot),Direction.WEST,bot) || roles.get(bot).equals("fly"))return "moveW";
+					if (!crash(x.get(bot),y.get(bot),Direction.WEST,bot))return "moveW";
 					else {
 						rightHand = true;
 						max = scanner[y.get(bot)][x.get(bot)];
@@ -597,28 +605,28 @@ public class MasterOfDrones extends SingleAgent {
 				case 4:
 					return "idle";
 				case 5:
-					if (!crash(x.get(bot),y.get(bot),Direction.NORTH_EAST,bot) || roles.get(bot).equals("fly"))return "moveE";
+					if (!crash(x.get(bot),y.get(bot),Direction.EAST,bot))return "moveE";
 					else {
 						rightHand = true;
 						max = scanner[y.get(bot)][x.get(bot)];
 						wantedDirection = Direction.EAST;
 					}
 				case 6:
-					if (!crash(x.get(bot),y.get(bot),Direction.SOUTH_WEST,bot) || roles.get(bot).equals("fly"))return "moveSW";
+					if (!crash(x.get(bot),y.get(bot),Direction.SOUTH_WEST,bot))return "moveSW";
 					else {
 						rightHand = true;
 						max = scanner[y.get(bot)][x.get(bot)];
 						wantedDirection = Direction.SOUTH_WEST;
 					}
 				case 7:
-					if (!crash(x.get(bot),y.get(bot),Direction.SOUTH,bot) || roles.get(bot).equals("fly"))return "moveS";
+					if (!crash(x.get(bot),y.get(bot),Direction.SOUTH,bot))return "moveS";
 					else {
 						rightHand = true;
 						max = scanner[y.get(bot)][x.get(bot)];
 						wantedDirection = Direction.SOUTH;
 					}
 				case 8:
-					if (!crash(x.get(bot),y.get(bot),Direction.SOUTH_EAST,bot) || roles.get(bot).equals("fly"))return "moveSE";
+					if (!crash(x.get(bot),y.get(bot),Direction.SOUTH_EAST,bot))return "moveSE";
 					else {
 						rightHand = true;
 						max = scanner[y.get(bot)][x.get(bot)];

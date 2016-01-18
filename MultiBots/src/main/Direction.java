@@ -7,14 +7,13 @@ package main;
  */
 public enum Direction {
 	NORTH("moveN", 0, -1),
-	//NORTH_EAST("moveNE", 1, -1),
+	NORTH_EAST("moveNE", 1, -1),
 	EAST("moveE", 1, 0),
 	SOUTH_EAST("moveSE", 1, 1),
 	SOUTH("moveS", 0, 1),
 	SOUTH_WEST("moveSW", -1, 1),
 	WEST("moveW", -1, 0),
-	NORTH_WEST("moveNW", -1, -1),
-	NORTH_EAST("moveNE", 1, -1);
+	NORTH_WEST("moveNW", -1, -1);
 	
 	// Constructor takes the command string as paramter. It also takes the x and y coordinates of the 2D direction of
 	// the direction, using the convention:
