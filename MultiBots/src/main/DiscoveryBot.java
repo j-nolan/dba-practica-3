@@ -129,7 +129,7 @@ public class DiscoveryBot extends SingleAgent {
 		// specifing which world we want to be in
 		JSONObject jsonObject = new JSONObject();
 		try {
-			jsonObject.put("world", "map2");
+			jsonObject.put("world", "map4");
 			
 			// Create the ACL message that will send the first command to the server
 			ACLMessage msg = new ACLMessage();

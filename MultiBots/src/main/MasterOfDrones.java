@@ -210,7 +210,7 @@ public class MasterOfDrones extends SingleAgent {
 					JSONArray jArray = json.getJSONArray("sensor");
 					if(state.get(index) == 2) {
 						statee = 2;
-						if(goalX==-1) {
+						if(true/*goalX==-1*/) {
 							boolean find = true;
 							for(int k=0;k<jArray.length() && find;k++) {
 								if(jArray.getInt(k) == 3) {
@@ -229,7 +229,7 @@ public class MasterOfDrones extends SingleAgent {
 							makeScanner();
 						}
 					}
-					if(state.get(index) == 1 && goalX==-1) {
+					if(state.get(index) == 1/* && goalX==-1*/) {
 						boolean find = true;
 						for(int k=0;k<jArray.length() && find;k++) {
 							if(jArray.getInt(k) == 3) {
