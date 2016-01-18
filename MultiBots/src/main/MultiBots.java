@@ -31,10 +31,10 @@ public class MultiBots {
 
         
 		// Create and start discovery agents
-		SingleAgent bot1 = new DiscoveryBot(new AgentID("bot1"), false, map1, "bot1");
-		SingleAgent	bot2 = new DiscoveryBot(new AgentID("bot2"), false, map2, "bot2");
-		SingleAgent	bot3 = new DiscoveryBot(new AgentID("bot3"), false, map3, "bot3");
-		SingleAgent	bot4 = new DiscoveryBot(new AgentID("bot4"), true, map4, "bot4");
+		SingleAgent bot1 = new DiscoveryBot(new AgentID("bot11"), false, map1, "bot11");
+		SingleAgent	bot2 = new DiscoveryBot(new AgentID("bot22"), false, map2, "bot22");
+		SingleAgent	bot3 = new DiscoveryBot(new AgentID("bot33"), false, map3, "bot33");
+		SingleAgent	bot4 = new DiscoveryBot(new AgentID("bot44"), true, map4, "bot44");
 		SingleAgent master = new MasterOfDrones(new AgentID("MasterOfDrones"), map5);
 		// Start all bots
 		bot1.start();

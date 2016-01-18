@@ -207,9 +207,9 @@ public class DiscoveryBot extends SingleAgent {
 				if (initializer) {
 					// Broadcast the key to other bots
 					msg.clearAllReceiver();
-					msg.addReceiver(new AgentID("bot1"));
-					msg.addReceiver(new AgentID("bot2"));
-					msg.addReceiver(new AgentID("bot3"));
+					msg.addReceiver(new AgentID("bot11"));
+					msg.addReceiver(new AgentID("bot22"));
+					msg.addReceiver(new AgentID("bot33"));
 					//msg.addReceiver(new AgentID("bot4"));
 					send(msg);
 				}
