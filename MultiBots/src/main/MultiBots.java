@@ -27,7 +27,7 @@ public class MultiBots {
 		Map map2 = new Map("Bot 2", new Point(150, 0), new Dimension(120, 120));
 		Map map3 = new Map("Bot 3", new Point(300, 0), new Dimension(120, 120));
 		Map map4 = new Map("Bot 4", new Point(450, 0), new Dimension(120, 120));
-		Map map5 = new Map("Master", new Point(600, 0), new Dimension(200, 200));
+		Map map5 = new Map("Master", new Point(600, 0), new Dimension(500, 500));
 
         
 		// Create and start discovery agents
@@ -35,7 +35,7 @@ public class MultiBots {
 		SingleAgent	bot2 = new DiscoveryBot(new AgentID("bot2"), false, map2, "bot2");
 		SingleAgent	bot3 = new DiscoveryBot(new AgentID("bot3"), false, map3, "bot3");
 		SingleAgent	bot4 = new DiscoveryBot(new AgentID("bot4"), true, map4, "bot4");
-		SingleAgent master = new MasterOfDrones(new AgentID("MasterOfDroness"), map5);
+		SingleAgent master = new MasterOfDrones(new AgentID("MasterOfDrones"), map5);
 		// Start all bots
 		bot1.start();
 		bot2.start();

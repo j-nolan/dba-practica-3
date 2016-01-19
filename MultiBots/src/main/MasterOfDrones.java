@@ -670,8 +670,8 @@ public class MasterOfDrones extends SingleAgent {
 				int x_aux = x.get(bot) + ((i%3) - 1);
 				int y_aux = y.get(bot) + ((i/3) - 1);
 				if(i%3 == 0) System.out.println();
-				if (x_aux<100 && y_aux<100 && x_aux>=0 && y_aux>=0) System.out.print(scanner[y_aux][x_aux] + " - ");
-				else System.out.print(-1);
+				//if (x_aux<100 && y_aux<100 && x_aux>=0 && y_aux>=0) System.out.print(scanner[y_aux][x_aux] + " - ");
+				//else System.out.print(-1);
 			}
 			System.out.println(bot + " moviendose al objetivo en dirección: " +pos);
 			switch(pos) {

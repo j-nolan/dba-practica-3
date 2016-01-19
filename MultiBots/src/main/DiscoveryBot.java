@@ -310,7 +310,7 @@ public class DiscoveryBot extends SingleAgent {
 			ACLMessage msg = new ACLMessage();
 			msg.setPerformative(ACLMessage.INFORM_REF);
 			msg.setSender(getAid());
-			msg.setReceiver(new AgentID("MasterOfDroness"));
+			msg.setReceiver(new AgentID("MasterOfDrones"));
 			msg.setContent(json.toString());
 			
 			send(msg);
